@@ -11,11 +11,11 @@ import nodemailer from "nodemailer";
 dotenv.config();
 const app = express();
 
-const corsOptions ={
-  origin:'http://localhost:3030', 
-  credentials:true,            //access-control-allow-credentials:true
-  optionSuccessStatus:200
-}
+const corsOptions = {
+  origin: "http://localhost:3030",
+  credentials: true, //access-control-allow-credentials:true
+  optionSuccessStatus: 200,
+};
 
 app.use(cors(corsOptions));
 
@@ -45,7 +45,15 @@ async function MongoConnect() {
 const client = await MongoConnect();
 
 app.get("/", function (request, response) {
-  response.send("🙋‍♂️ Welcome to Login/SignUp");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "1800");
+  res.setHeader("Access-Control-Allow-Headers", "content-type");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "PUT, POST, GET, DELETE, PATCH, OPTIONS"
+  );
+  response.send("🙋‍♂️ Welcome to LT Backend");
 });
 
 app.post("/signup", async function (request, response) {
@@ -62,12 +70,18 @@ app.post("/signup", async function (request, response) {
     let result = await client
       .db("LT")
       .collection("Users")
-      .insertOne({ name,email , password: hashedPass, role_radio, dailyreport });
+      .insertOne({
+        name,
+        email,
+        password: hashedPass,
+        role_radio,
+        dailyreport,
+      });
     response.status(201).send({ msg: "User added" });
   }
 });
 
-app.post("/signin", async  (request, response) => {
+app.post("/signin", async (request, response) => {
   let { email, password, login_location, date, time } = request.body;
   let userdb = await client
     .db("LT")
@@ -80,7 +94,6 @@ app.post("/signin", async  (request, response) => {
     if (isSame) {
       var token = jwt.sign({ email: email }, JWT_SECRET);
 
-      
       await client
         .db("LT")
         .collection("Users")
@@ -89,17 +102,15 @@ app.post("/signin", async  (request, response) => {
           {
             $push: {
               dailyreport: {
-               login_location, 
-               date,
-               time
+                login_location,
+                date,
+                time,
               },
             },
           }
         );
 
-        response.status(200).send({ msg: "logged in", token });
-
-
+      response.status(200).send({ msg: "logged in", token });
     } else {
       response.status(400).send({ msg: "invalid credentials" });
     }
@@ -217,15 +228,11 @@ app.post("/reset", async function (request, response) {
       .updateOne({ email: email }, { $set: { password: hashedPass } });
     response.send({ msg: "password updated", email });
   } else {
-    response
-      .status(400)
-      .send({
-        msg: "wrong mail stored in session storage, go all over again",
-        email,
-      });
+    response.status(400).send({
+      msg: "wrong mail stored in session storage, go all over again",
+      email,
+    });
   }
 });
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
-
-
