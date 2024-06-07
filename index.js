@@ -11,13 +11,7 @@ import nodemailer from "nodemailer";
 dotenv.config();
 const app = express();
 
-const corsOptions = {
-  origin: "http://localhost:3030",
-  credentials: true, //access-control-allow-credentials:true
-  optionSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
@@ -45,14 +39,7 @@ async function MongoConnect() {
 const client = await MongoConnect();
 
 app.get("/", function (request, response) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Max-Age", "1800");
-  res.setHeader("Access-Control-Allow-Headers", "content-type");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "PUT, POST, GET, DELETE, PATCH, OPTIONS"
-  );
+  
   response.send("🙋‍♂️ Welcome to LT Backend");
 });
 
