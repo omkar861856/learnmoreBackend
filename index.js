@@ -61,7 +61,7 @@ app.post("/signup", async function (request, response) {
         name,
         email,
         password: hashedPass,
-        role_radio,
+        role:role_radio,
         dailyreport,
       });
     response.status(201).send({ msg: "User added" });
