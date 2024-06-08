@@ -97,7 +97,7 @@ app.post("/signin", async (request, response) => {
           }
         );
 
-      response.status(200).send({ msg: "logged in", token });
+      response.status(200).send({ msg: "logged in", role: userdb.role, token });
     } else {
       response.status(400).send({ msg: "invalid credentials" });
     }
