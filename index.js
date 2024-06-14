@@ -7,6 +7,10 @@ import * as dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import { ServerApiVersion } from "mongodb";
+import http from "http";
+import { WebSocketServer, WebSocket } from "ws";
+
 
 dotenv.config();
 const app = express();
@@ -20,6 +24,7 @@ app.use(cookieparser());
 //set variables in .env file - error - Issue..
 
 const PORT = process.env.PORT;
+const WS_PORT = process.env.WS_PORT
 const JWT_SECRET = process.env.JWT_SECRET;
 const MONGO_URL = process.env.MONGO_URL;
 
@@ -31,7 +36,13 @@ async function hashedPassword(password) {
 }
 
 async function MongoConnect() {
-  const client = await new MongoClient(MONGO_URL).connect();
+  const client = await new MongoClient(MONGO_URL, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  }).connect();
   console.log("Mongo Connected");
   return client;
 }
@@ -39,9 +50,10 @@ async function MongoConnect() {
 const client = await MongoConnect();
 
 app.get("/", function (request, response) {
-  
   response.send("🙋‍♂️ Welcome to LT Backend");
 });
+
+// signin signup and signout user
 
 app.post("/signup", async function (request, response) {
   let { name, email, password, role_radio } = request.body;
@@ -54,16 +66,13 @@ app.post("/signup", async function (request, response) {
   } else {
     const hashedPass = await hashedPassword(password);
     const dailyreport = [];
-    let result = await client
-      .db("LT")
-      .collection("Users")
-      .insertOne({
-        name,
-        email,
-        password: hashedPass,
-        role:role_radio,
-        dailyreport,
-      });
+    let result = await client.db("LT").collection("Users").insertOne({
+      name,
+      email,
+      password: hashedPass,
+      role: role_radio,
+      dailyreport,
+    });
     response.status(201).send({ msg: "User added" });
   }
 });
@@ -97,7 +106,12 @@ app.post("/signin", async (request, response) => {
           }
         );
 
-      response.status(200).send({ msg: "logged in",name:userdb.name, role: userdb.role, token });
+      response.status(200).send({
+        msg: "logged in",
+        name: userdb.name,
+        role: userdb.role,
+        token,
+      });
     } else {
       response.status(400).send({ msg: "invalid credentials" });
     }
@@ -124,82 +138,31 @@ app.post("/signout", async function (request, response) {
   }
 });
 
-app.get("/profile/:email", async function (request, response) {
+// for blog editor
+
+app.post("/editor/:id", async function (request, response) {
   try {
-    const email = request.params.email;
-    let userdb = await client
-      .db("SingIn")
-      .collection("Users")
-      .findOne({ email: email });
-    // request.header("x-auth-token",userdb.token)
-    let data = await client
-      .db("SingIn")
-      .collection("Profile")
-      .findOne({ email: email });
-    console.log("data here", data);
-    response.send({ data });
-  } catch (error) {
-    console.log(error);
-  }
-});
+    const id = request.params.id;
+    const content = request.content;
+    let blogdb = await client.db("LT").collection("Drafts").findOne({ id });
 
-app.post("/sendmail", async function main(request, response) {
-  var previewurl = "";
-  let { email } = request.body;
-  let userdb = await client
-    .db("SingIn")
-    .collection("Users")
-    .findOne({ email: email });
-  if (userdb) {
-    try {
-      // Generate test SMTP service account from ethereal.email
-      // Only needed if you don't have a real mail account for testing
-      let testAccount = await nodemailer.createTestAccount();
-
-      // create reusable transporter object using the default SMTP transport
-      let transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: testAccount.user, // generated ethereal user
-          pass: testAccount.pass, // generated ethereal password
-        },
+    if (blogdb) {
+      response
+        .status(200)
+        .send({ msg: `Draft of ${id} already present`, blogdb });
+    } else {
+      let result = await client.db("LT").collection("Drafts").insertOne({
+        id,
+        content,
       });
-
-      transporter.verify(function (error, success) {
-        if (error) {
-          console.log(error);
-        } else {
-          console.log("Server is ready to take our messages", success);
-        }
-      });
-
-      // send mail with defined transport object
-      let info = await transporter.sendMail({
-        from: '"Fred Foo 👻" <companyemail@gmail.com>', // sender address
-        to: `${email}`, // list of receivers
-        subject: "Reset Password ✔", // Subject line
-        text: "Rest Your Password...", // plain text body
-        html: `<div><h1>Click the below link to go to password reset page 👉 </h1><a href="https://signinsignupreacttailwind.netlify.app/reset">click this link to reset password</a></div>`, // html body
-      });
-
-      console.log("Message sent: %s", info.messageId);
-      // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-      // Preview only available when sending through an Ethereal account
-      console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-      // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
-      var previewurl = nodemailer.getTestMessageUrl(info);
-      response.send({ msg: "email sent", previewurl: previewurl });
-    } catch (error) {
-      console.log(error);
+      response.status(201).send({ msg: `Draft of ${id} added`, result });
     }
-  } else {
-    response.status(401).send({ msg: "email not found in db" });
+  } catch (error) {
+    response.status(500).send(error);
   }
 });
 
+// reste password
 app.post("/reset", async function (request, response) {
   let { email, password } = request.body;
   let userdb = await client
@@ -221,5 +184,59 @@ app.post("/reset", async function (request, response) {
     });
   }
 });
+
+// web socket
+
+const dbName = 'LT';
+const collectionName = 'Enquireys';
+const port = WS_PORT;
+
+// WebSocket server setup
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
+});
+
+async function startSocketServer() {
+  try {
+    // Connect to MongoDB
+    await client.connect();
+    console.log('Connected to MongoDB');
+
+    const db = client.db('LT');``
+    const collection = db.collection('Enquireys');
+
+    // Watch the collection for changes
+    const changeStream = collection.watch();
+
+    changeStream.on('change', (change) => {
+      console.log('Change detected:', change);
+
+      // Broadcast the change to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(change));
+        }
+      }); 
+    });
+
+    server.listen(port, () => {
+      console.log(`Socket Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+  }
+}
+
+// server has to be closed after work done if may cause problem when many connections
+
+startSocketServer();
+
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
