@@ -191,49 +191,34 @@ const dbName = 'LT';
 const collectionName = 'Enquireys';
 const port = WS_PORT;
 
-// WebSocket server setup
+// Create HTTP server
 const server = http.createServer(app);
+
+// WebSocket Server
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
-  console.log('Client connected');
-
-  ws.on('close', () => {
-    console.log('Client disconnected');
-  });
+    console.log('Client connected');
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
 });
 
-async function startSocketServer() {
-  try {
-    // Connect to MongoDB
-    await client.connect();
-    console.log('Connected to MongoDB');
+// MongoDB Change Stream
+client.connect().then(() => {
+  const collection = client.db('LT').collection('Enquireys');
 
-    const db = client.db('LT');``
-    const collection = db.collection('Enquireys');
-
-    // Watch the collection for changes
-    const changeStream = collection.watch();
-
-    changeStream.on('change', (change) => {
+  const changeStream = collection.watch();
+  changeStream.on('change', (change) => {
       console.log('Change detected:', change);
 
-      // Broadcast the change to all connected clients
       wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(change));
-        }
-      }); 
-    });
-    
-  } catch (error) {
-    console.error('Error connecting to MongoDB || WS:', error);
-  }
-}
-
-// server has to be closed after work done if may cause problem when many connections
-
-startSocketServer();
+          if (client.readyState === client.OPEN) {
+              client.send(JSON.stringify(change));
+          }
+      });
+  });
+});
 
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
