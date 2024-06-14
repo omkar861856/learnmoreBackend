@@ -225,12 +225,9 @@ async function startSocketServer() {
         }
       }); 
     });
-
-    server.listen(port, () => {
-      console.log(`Socket Server is running on port ${port}`);
-    });
+    
   } catch (error) {
-    console.error('Error connecting to MongoDB:', error);
+    console.error('Error connecting to MongoDB || WS:', error);
   }
 }
 
