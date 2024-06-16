@@ -17,12 +17,12 @@ import signUpRouter from './routes/signup.js';
 dotenv.config();
 export const app = express();
 
-const corsOptions = {
-  origin: 'http://localhost:3030', // Replace with your frontend URL
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-};
+// const corsOptions = {
+//   origin: 'http://localhost:3030', // Replace with your frontend URL
+//   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+// };
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json())
 
 app.use(bodyparser.urlencoded({ extended: false }));
