@@ -5,17 +5,25 @@ import cookieparser from "cookie-parser";
 import express, { response } from "express";
 import * as dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { ServerApiVersion } from "mongodb";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import signInRouter from './routes/signin.js';
+import signOutRouter from './routes/signout.js';
+import signUpRouter from './routes/signup.js';
 
 
 dotenv.config();
-const app = express();
+export const app = express();
 
-app.use(cors());
+const corsOptions = {
+  origin: 'http://localhost:3030', // Replace with your frontend URL
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
+app.use(express.json())
 
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
@@ -25,10 +33,10 @@ app.use(cookieparser());
 
 const PORT = process.env.PORT;
 const WS_PORT = process.env.WS_PORT
-const JWT_SECRET = process.env.JWT_SECRET;
+export const JWT_SECRET = process.env.JWT_SECRET;
 const MONGO_URL = process.env.MONGO_URL;
 
-async function hashedPassword(password) {
+export async function hashedPassword(password) {
   const NO_OF_ROUNDS = 10;
   const salt = await bcrypt.genSalt(NO_OF_ROUNDS);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -47,96 +55,20 @@ async function MongoConnect() {
   return client;
 }
 
-const client = await MongoConnect();
+export const client = await MongoConnect();
 
 app.get("/", function (request, response) {
   response.send("🙋‍♂️ Welcome to LT Backend");
 });
 
-// signin signup and signout user
+// Use routes sign in
+app.use('/', signInRouter);
 
-app.post("/signup", async function (request, response) {
-  let { name, email, password, role_radio } = request.body;
-  let userdb = await client
-    .db("LT")
-    .collection("Users")
-    .findOne({ email: email });
-  if (userdb) {
-    response.status(200).send({ msg: "User already present" });
-  } else {
-    const hashedPass = await hashedPassword(password);
-    const dailyreport = [];
-    let result = await client.db("LT").collection("Users").insertOne({
-      name,
-      email,
-      password: hashedPass,
-      role: role_radio,
-      dailyreport,
-    });
-    response.status(201).send({ msg: "User added" });
-  }
-});
+// Use routes sign out
+app.use('/', signOutRouter);
 
-app.post("/signin", async (request, response) => {
-  let { email, password, login_location, date, time } = request.body;
-  let userdb = await client
-    .db("LT")
-    .collection("Users")
-    .findOne({ email: email });
-
-  if (userdb) {
-    const isSame = await bcrypt.compare(password, userdb.password);
-
-    if (isSame) {
-      var token = jwt.sign({ email: email }, JWT_SECRET);
-
-      await client
-        .db("LT")
-        .collection("Users")
-        .findOne(
-          { email: email },
-          {
-            $push: {
-              dailyreport: {
-                login_location,
-                date,
-                time,
-              },
-            },
-          }
-        );
-
-      response.status(200).send({
-        msg: "logged in",
-        name: userdb.name,
-        role: userdb.role,
-        token,
-      });
-    } else {
-      response.status(400).send({ msg: "invalid credentials" });
-    }
-  } else {
-    response.status(400).send({ msg: "no user found" });
-  }
-});
-
-app.post("/signout", async function (request, response) {
-  let { email, password } = request.body;
-  let userdb = await client
-    .db("LT")
-    .collection("Users")
-    .findOne({ email: email });
-  if (userdb) {
-    response.status(200);
-  } else {
-    const hashedPass = await hashedPassword(password);
-    let result = await client
-      .db("LT")
-      .collection("Users")
-      .insertOne({ email: email, password: hashedPass });
-    response.status(201).send({ msg: "User added " });
-  }
-});
+// Use routes sign up
+app.use('/', signUpRouter);
 
 // for blog editor
 
@@ -195,7 +127,7 @@ const port = WS_PORT;
 const server = http.createServer(app);
 
 // WebSocket Server
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ port: WS_PORT });
 
 wss.on('connection', (ws) => {
     console.log('Client connected');
@@ -219,6 +151,8 @@ client.connect().then(() => {
       });
   });
 });
+
+
 
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
