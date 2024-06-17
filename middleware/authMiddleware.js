@@ -1,4 +1,5 @@
 import { JWT_SECRET } from "../index.js";
+import { jwt } from "jsonwebtoken";
 
 // Middleware to protect routes
 const authMiddleware = (req, res, next) => {

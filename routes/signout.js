@@ -1,5 +1,6 @@
-import { app, client, hashedPassword } from "../index.js";
+// Assuming this is your corrected code
 import express from "express";
+import { client } from "../index.js"; // Assuming client is exported from index.js
 
 const router = express.Router();
 
@@ -9,12 +10,9 @@ router.post("/signout", async function (request, response) {
   const usersCollection = client.db("LT").collection("Users");
 
   try {
-    let user = await client
-      .db("LT")
-      .collection("Users")
-      .findOne({ email: email });
+    let user = await usersCollection.findOne({ email: email });
 
-    if (user) {
+    if (user) { 
       const logoutTime = new Date();
 
       // Update the latest attendance record with logout time
@@ -22,12 +20,15 @@ router.post("/signout", async function (request, response) {
       if (attendance && attendance.length > 0) {
         const latestAttendance = attendance[attendance.length - 1];
         latestAttendance.logoutTime = logoutTime;
+        // Assuming dailyReport is always defined, as per your usage
         latestAttendance.dailyReport.logoutTime = logoutTime;
 
         await usersCollection.updateOne(
           { email, "attendance.date": latestAttendance.date },
           { $set: { "attendance.$": latestAttendance } }
         );
+
+        console.log('log out recorded')
 
         response.status(200).send({ message: "Logout time recorded successfully" });
       } else {
@@ -44,4 +45,5 @@ router.post("/signout", async function (request, response) {
   }
 });
 
-export default router;
+export default router; 
+ 

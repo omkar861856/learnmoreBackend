@@ -6,7 +6,7 @@ const router = express.Router();
 const updateUserProfile = async (req, res) => {
     const { email, name, photoURL } = req.body;
 
-    if ((!name && !photoUrl)) {
+    if ((!name && !photoURL)) {
         return res.status(400).json({ message: 'At least one field (name or photoUrl) are required' });
     }
 
@@ -16,7 +16,7 @@ const updateUserProfile = async (req, res) => {
 
         const updateFields = {};
         if (name) updateFields.name = name;
-        if (photoUrl) updateFields.photoURL = photoURL;
+        if (photoURL) updateFields.photoURL = photoURL;
         console.log(updateFields)
 
         const result = await collection.updateOne(

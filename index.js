@@ -33,7 +33,6 @@ app.use(cookieparser());
 //set variables in .env file - error - Issue..
 
 const PORT = process.env.PORT;
-const WS_PORT = process.env.WS_PORT
 export const JWT_SECRET = process.env.JWT_SECRET;
 const MONGO_URL = process.env.MONGO_URL;
 
@@ -104,28 +103,7 @@ app.post("/editor/:id", async function (request, response) {
   }
 });
 
-// reste password
-app.post("/reset", async function (request, response) {
-  let { email, password } = request.body;
-  let userdb = await client
-    .db("SingIn")
-    .collection("Users")
-    .findOne({ email: email });
-  console.log(request.body);
-  if (userdb) {
-    const hashedPass = await hashedPassword(password);
-    let result = await client
-      .db("SingIn")
-      .collection("Users")
-      .updateOne({ email: email }, { $set: { password: hashedPass } });
-    response.send({ msg: "password updated", email });
-  } else {
-    response.status(400).send({
-      msg: "wrong mail stored in session storage, go all over again",
-      email,
-    });
-  }
-});
+
 
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
