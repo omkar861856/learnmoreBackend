@@ -12,6 +12,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import signInRouter from './routes/signin.js';
 import signOutRouter from './routes/signout.js';
 import signUpRouter from './routes/signup.js';
+import updateUserRouter from './routes/update-user.js';
 
 
 dotenv.config();
@@ -70,6 +71,10 @@ app.use('/', signOutRouter);
 // Use routes sign up
 app.use('/', signUpRouter);
 
+// update user
+app.use('/user', updateUserRouter);
+
+
 // for blog editor
 
 app.post("/editor/:id", async function (request, response) {
@@ -119,38 +124,38 @@ app.post("/reset", async function (request, response) {
 
 // web socket
 
-const dbName = 'LT';
-const collectionName = 'Enquireys';
-const port = WS_PORT;
+// const dbName = 'LT';
+// const collectionName = 'Enquireys';
+// const port = WS_PORT;
 
-// Create HTTP server
-const server = http.createServer(app);
+// // Create HTTP server
+// const server = http.createServer(app);
 
-// WebSocket Server
-const wss = new WebSocketServer({ port: WS_PORT });
+// // WebSocket Server
+// const wss = new WebSocketServer({ port: WS_PORT });
 
-wss.on('connection', (ws) => {
-    console.log('Client connected');
-    ws.on('close', () => {
-        console.log('Client disconnected');
-    });
-});
+// wss.on('connection', (ws) => {
+//     console.log('Client connected');
+//     ws.on('close', () => {
+//         console.log('Client disconnected');
+//     });
+// });
 
-// MongoDB Change Stream
-client.connect().then(() => {
-  const collection = client.db('LT').collection('Enquireys');
+// // MongoDB Change Stream
+// client.connect().then(() => {
+//   const collection = client.db('LT').collection('Enquireys');
 
-  const changeStream = collection.watch();
-  changeStream.on('change', (change) => {
-      console.log('Change detected:', change);
+//   const changeStream = collection.watch();
+//   changeStream.on('change', (change) => {
+//       console.log('Change detected:', change);
 
-      wss.clients.forEach((client) => {
-          if (client.readyState === client.OPEN) {
-              client.send(JSON.stringify(change));
-          }
-      });
-  });
-});
+//       wss.clients.forEach((client) => {
+//           if (client.readyState === client.OPEN) {
+//               client.send(JSON.stringify(change));
+//           }
+//       });
+//   });
+// });
 
 
 

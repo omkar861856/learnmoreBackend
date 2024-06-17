@@ -18,6 +18,8 @@ router.post("/signup", async function (request, response) {
     const userToInsert = {
       name: name,
       email: email,
+      photoURL:"",
+      createdAt: new Date(),
       password: hashedPass,
       role: role_radio,
       holidays: [],

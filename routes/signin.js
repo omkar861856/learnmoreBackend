@@ -19,21 +19,21 @@ router.post("/signin", async (request, response) => {
 
         await markAttendance(email, login_location);
 
-        return response.status(200).json({
+        response.status(200).send({
           msg: "Logged in",
           name: userdb.name,
           role: userdb.role,
           token,
         });
       } else {
-        return response.status(400).json({ msg: "Invalid credentials" });
+        response.status(400).send({ msg: "Invalid credentials" });
       }
     } else {
-      return response.status(400).json({ msg: "No user found" });
+      response.status(400).send({ msg: "No user found" });
     }
   } catch (error) {
     console.error("Error during signin:", error);
-    return response.status(500).json({ msg: "Internal server error" });
+    response.status(500).send({ msg: "Internal server error" });
   }
 });
 
