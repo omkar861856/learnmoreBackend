@@ -5,17 +5,17 @@ import cookieparser from "cookie-parser";
 import express, { response } from "express";
 import * as dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
 import { ServerApiVersion } from "mongodb";
-import http from "http";
-import { WebSocketServer, WebSocket } from "ws";
 import signInRouter from './routes/signin.js';
 import signOutRouter from './routes/signout.js';
 import signUpRouter from './routes/signup.js';
 import updateUserRouter from './routes/update-user.js';
+import allEnqyirysRouter from './routes/enquirys.js';
+import allUsersRouter from './routes/users.js';
 
 
 dotenv.config();
+
 export const app = express();
 
 // const corsOptions ={
@@ -74,6 +74,11 @@ app.use('/', signUpRouter);
 // update user
 app.use('/user', updateUserRouter);
 
+// enquiry
+app.use('/enquirys', allEnqyirysRouter);
+// enquiry
+app.use('/users', allUsersRouter);
+
 
 // for blog editor
 
@@ -122,42 +127,6 @@ app.post("/reset", async function (request, response) {
   }
 });
 
-// web socket
-
-// const dbName = 'LT';
-// const collectionName = 'Enquireys';
-// const port = WS_PORT;
-
-// // Create HTTP server
-// const server = http.createServer(app);
-
-// // WebSocket Server
-// const wss = new WebSocketServer({ port: WS_PORT });
-
-// wss.on('connection', (ws) => {
-//     console.log('Client connected');
-//     ws.on('close', () => {
-//         console.log('Client disconnected');
-//     });
-// });
-
-// // MongoDB Change Stream
-// client.connect().then(() => {
-//   const collection = client.db('LT').collection('Enquireys');
-
-//   const changeStream = collection.watch();
-//   changeStream.on('change', (change) => {
-//       console.log('Change detected:', change);
-
-//       wss.clients.forEach((client) => {
-//           if (client.readyState === client.OPEN) {
-//               client.send(JSON.stringify(change));
-//           }
-//       });
-//   });
-// });
-
-
-
 
 app.listen(PORT, () => console.log(`The server started in: ${PORT} ✨✨`));
+  

@@ -4,7 +4,7 @@ import express from 'express'
 const router = express.Router();
 
 const updateUserProfile = async (req, res) => {
-    const { email, name, photoUrl } = req.body;
+    const { email, name, photoURL } = req.body;
 
     if ((!name && !photoUrl)) {
         return res.status(400).json({ message: 'At least one field (name or photoUrl) are required' });
@@ -16,7 +16,8 @@ const updateUserProfile = async (req, res) => {
 
         const updateFields = {};
         if (name) updateFields.name = name;
-        if (photoUrl) updateFields.photoUrl = photoUrl;
+        if (photoUrl) updateFields.photoURL = photoURL;
+        console.log(updateFields)
 
         const result = await collection.updateOne(
             { email },
@@ -34,7 +35,7 @@ const updateUserProfile = async (req, res) => {
 };
 
 
-router.put('/update-profile', updateUserProfile);
+router.patch('/update-profile', updateUserProfile);
 
 
 

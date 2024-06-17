@@ -29,18 +29,18 @@ router.post("/signout", async function (request, response) {
           { $set: { "attendance.$": latestAttendance } }
         );
 
-        response.status(200).json({ message: "Logout time recorded successfully" });
+        response.status(200).send({ message: "Logout time recorded successfully" });
       } else {
         response
           .status(400)
-          .json({ message: "No attendance record found for today" });
+          .send({ message: "No attendance record found for today" });
       }
     } else {
-      return response.status(404).json({ message: "User not found" });
+      return response.status(404).send({ message: "User not found" });
     }
   } catch (error) {
     console.error("Error updating logout time:", error);
-    response.status(500).json({ message: "Failed to update logout time" });
+    response.status(500).send({ message: "Failed to update logout time" });
   }
 });
 
